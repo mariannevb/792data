@@ -1,0 +1,87 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# Setup
+
+```{r libraries, message=FALSE}
+# Reading Data
+library(readr)
+
+# Processing Data
+library(dplyr)
+library(tibble)
+library(tidyr)
+
+# Visualizing Data
+library(ggplot2) # Loads "diamonds" dataset
+```
+
+# Load Data
+
+# Process Data
+
+# Look at Variables
+
+```{r}
+summary(diamonds)
+```
+
+# Run Model
+
+## Define Formula
+
+Define control variables for creating regression, pulling coefficients, labeling them. Could use `tribble` in future to be even more tidy.
+
+```{r}
+# Control variable for regression
+regression_variables <- c(
+  "Carat of Diamond" = "carat"
+)
+
+# Variables not used in linear model
+unused_variables <- c(
+  "Depth of Diamond" = "depth"
+)
+
+# "Tidy" the data into a a data.frame (future use in pulling coefficients)
+df_regression_var <- as_data_frame(as.list(regression_variables))
+df_regression_var <- gather(df_regression_var, var_label, var_name)
+
+# Create formula for use in linear model
+lm_formula <- as.formula(paste("price ~ ", paste(regression_variables , collapse= " + ")))
+```
+
+
+## Run Model
+
+```{r}
+lm_price_clarity <- lm(data = diamonds, 
+                       formula = lm_formula) 
+```
+
+Pull coefficients.
+
+```{r}
+df_coef <- as_data_frame(as.list(coef(lm_price_clarity)))
+df_coef <- gather(df_coef, var_name, var_value)
+```
+
+Join coefficients to labels.
+
+```{r}
+df_coef_labeled <- full_join(df_regression_var, df_coef, by = "var_name")
+
+df_coef_labeled <- mutate(df_coef_labeled,
+                          var_label_imputed = coalesce(var_label, var_name))
+```
+
+## Visualize Coef
+
+```{r}
+df_coef_labeled %>% 
+  ggplot(aes(x = var_label_imputed, y = var_value)) +
+  geom_bar(stat = "identity")
+```
+

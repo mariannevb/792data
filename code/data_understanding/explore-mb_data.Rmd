@@ -1,0 +1,87 @@
+---
+title: "Explore MB's Economic Data"
+output: html_document
+---
+
+# Setup
+
+Notes:
+
+* `CTRL + ALT + i` to insert R "chunk".  
+* Name R chunks to see them in "Document outline" (right)
+* To run chunk, hit green arrow or (keyboard shortcut) `CMD + SHIFT +ENTER`
+
+```{r libraries}
+# Reading Data
+library(readr)
+
+# Processing Data
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(lubridate)
+
+# Visualizing Data
+library(ggplot2) # Loads "diamonds" dataset"
+```
+
+```{r directories}
+project_directory <- "C:/Users/Ryan/repos/mb-econ"
+```
+
+
+# Load Data
+
+Notes:
+
+* You can also use the `xlsx` package to load in individual sheets from an Excel file. You will need to install `rJava` as well as Java.
+* `read_csv` is from `readr`. Better defaults. Converts characters to characters not "factors". `read.csv` (dot) will convert variables to factors by default when reading in a CSV file. 
+* Factors are technically integers but display (print) as characters.
+
+```{r, message=FALSE}
+hours_data <- read_csv(file = paste0(project_directory,
+                                     "/data/raw/or_2017_dataset_hours_sheet.csv"))
+```
+
+# Process Data
+
+What are we seeing? The first column "X1" is obviously a date variable. Make this clear and convert to a date.
+
+```{r}
+glimpse(hours_data)
+```
+
+Note:
+
+* Example of how to join data
+* To comment out, `CTRL + SHIFT + C`
+
+```{r}
+# combined_data <- left_join(x = hours_data,
+#           y = other_data,
+#           by = c("left_var" = "right_var", 
+#                  "left2" = "right2"))
+```
+
+```{r}
+hours_data <- hours_data %>% 
+  # Fix variable name (excel default)
+  rename(Hours_year_str = X1) %>% # Hours_year => new name. X1 => old name.
+  # Create month/day/year variables, keep old
+  separate(col = Hours_year_str, 
+           into = c("Hour_month", "Hour_day", "Hour_year"),
+           sep = "[/]",
+           remove = FALSE) %>%
+  # Create new date variable manually
+  mutate(Hours_year_manual = mdy(paste0(Hour_month,
+                                       "01",
+                                       Hour_year,
+                                       sep = "[/]"))) %>% 
+  # Fix issue where 1960 becomes 2060 (other years too)
+  mutate(Hours_year_manual = if_else(year(Hours_year_manual) >= 2060, 
+                              Hours_year_manual - years(100),
+                              Hours_year_manual))
+```
+
+# Analysis
+
