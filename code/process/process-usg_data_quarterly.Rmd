@@ -1,0 +1,74 @@
+---
+title: "Process SGU"
+output: html_document
+---
+
+WEIRD wide/long formatted data. Could not be read into Stata.
+
+# Setup
+
+```{r libraries}
+# Reading Data
+library(readr)
+
+# Processing Data
+library(dplyr)
+library(tibble)
+library(tidyr)
+library(lubridate)
+
+# Visualizing Data
+library(ggplot2) # Loads "diamonds" dataset"
+```
+
+```{r directories}
+project_directory <- "C:/Users/Ryan/repos/792data"
+```
+
+
+# Load Data
+
+```{r, message=FALSE}
+usg_data_quarterly <- read_csv(file.path(project_directory, 
+                                         "data", "raw",
+                                         "usg_data_quarterly_data.csv"))
+```
+
+```{r}
+usg_data_quarterly %>% 
+  filter(`Country Name` == "United States",
+         `Indicator Name` == "GDP per capita (constant LCU)") %>% 
+  select( - `Country Name`, - `Country Code`, - `Indicator Name`, - `Indicator Code`) %>% 
+  gather(indicator_year, indicator_value)
+```
+
+
+```{r}
+usg_data_quarterly_long <- usg_data_quarterly %>%
+  select( - `Indicator Code`) %>% 
+  gather(indicator_year, indicator_value,
+         - `Country Name`, - `Country Code`, - `Indicator Name`) 
+
+# For example, you could also make the data "wide" again instead of long.
+usg_data_quarterly_wide_ind_col <- usg_data_quarterly_long %>%
+  spread(`Indicator Name`, indicator_value)
+```
+
+# Process Data
+
+```{r}
+glimpse(usg_data_quarterly_long)
+```
+
+```{r}
+glimpse(usg_data_quarterly_wide_ind_col)
+```
+
+# Save Data
+
+```{r}
+write_csv(x = usg_data_quarterly_wide_ind_col,
+          path = paste0(project_directory,
+                        "/data/processed/usg_data_quarterly_wide_ind_col.csv"))
+```
+
